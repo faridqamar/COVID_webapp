@@ -1,0 +1,364 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}COVID Hospitalization Predictions{% endblock %}
+
+{% block main %}
+
+<div class="col-xs-1">
+</div>
+<div class="col-xs-4">    
+    
+    <div class="row">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+  <form action="/" method="POST" enctype="multipart/form-data" id="param-form">
+    
+   <div class="row" style="margin-bottom:0.5cm;">   
+       <h3>Simulation Parameters</h3>
+   </div>
+
+<!-- radio button selecting DE or CC -->
+     <div class="row">
+       <div class="form-group">
+          <label>Area of simulation</label><br>
+          <input type="radio" name="DEorCC" id="DE" value="DE" checked="checked"> Full State  </input>
+          <input type="radio" name="DEorCC" id="CC" value="CC"> ChristianaCare</input><br>
+       </div>
+      </div>
+
+<!-- state population integer input -->
+      <div class="row">
+        <div class="form-group">
+          <label>State population*</label>
+          <input type="number" min="1000" max="8000000000" step="1" class="form-control" id="npop" name="npop" value="1000000" required="true"> 
+        </div>
+      </div>
+
+<!-- radio button selecting MCMC extent (NSTEPS) -->
+     <div class="row">
+       <div class="form-group">
+          <label>Extent of simulation</label><br>
+          <input type="radio" name="MCMC_nsteps" id="Low" value="Low" checked="checked"> Low intensity (larger uncertainty, takes minutes)</input><br>
+          <input type="radio" name="MCMC_nsteps" id="Med" value="Med"> Medium intensity</input><br>
+          <input type="radio" name="MCMC_nsteps" id="High" value="High"> High intensity (smaller uncertainty, takes hours)</input><br>
+       </div>
+     </div>
+
+   <hr>
+   <div class="row" style="margin-bottom:0.5cm;">
+       <h3>Epidemiology Parameters</h3>
+   </div>
+
+<!-- upload data file -->
+      <div class="row">
+        <div class="form-group">
+          <label>Upload data file (.csv)*</label>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" name="upfile" id="upfile" required="true" oninput="filesize(this);">
+            <!--label class="custom-file-label" for="upfile">Select data file...</label-->
+          </div>
+        </div>
+      </div>
+
+<!-- fracwith -->
+      <div class="row">
+        <div class="form-group">
+           <label>Fraction of infected population with symptoms*</label>
+           <input type="number" min="0.0" step="0.01" max="1.0" class="form-control" id="fracwith" name="fracwith" value="0.8" required="true">
+        </div>
+      </div>
+
+<!-- daysuntils -->
+      <div class="row">
+        <div class="form-group">
+           <label>Days until symptoms show up*</label>
+           <input type="number" min="1" step="1" max="100" class="form-control" id="daysuntils" name="daysuntils" value="7" required="true">
+        </div>
+      </div>
+
+<!-- infectious_days -->
+      <div class="row">
+        <div class="form-group">
+           <label>Days infected person is contagious*</label>
+           <input type="number" min="1" step="1" max="100" class="form-control" id="infectious_days" name="infectious_days" value="28" required="true">
+        </div>
+      </div>
+
+<!-- symptoms_days_before_hospital -->
+      <div class="row">
+        <div class="form-group">
+           <label>Days before person with symptoms goes to hospital*</label>
+           <input type="number" min="1" step="1" max="100" class="form-control" id="symptoms_days_before_hospital" name="symptoms_days_before_hospital" value="4" required="true">
+        </div>
+      </div>
+
+<!-- checkbbox to enable adding custom immunity months (np.inf otherwise) -->
+      <div class="row">
+       <div class="form-group">
+           <input type="checkbox" name="checkreinsert" id="checkreinsert">  Include immunity loss in the simulation</input><br>
+       </div>
+      </div>
+
+<!-- reinsert -->
+      <div class="row">
+        <div class="form-group" id="div_reinsert" style="display:none;">
+           <label>Months after which infected lose immunity</label>
+           <input type="number" min="1" step="1" max="100" class="form-control" id="reinsert" name="reinsert" value="6">
+        </div>
+       </div>
+
+<!-- checkbbox to enable adding custom vaccination months (np.inf otherwise) -->
+      <div class="row">
+       <div class="form-group">
+           <input type="checkbox" name="checkvax" id="checkvax" checked="checked">  Include vaccination rates in the simulation</input><br>
+       </div>
+      </div>
+
+<!-- vaccinated -->
+      <div class="row">
+        <div class="form-group" id="div_vax">
+           <label>Months after which 20,000 people/week received a vaccine</label>
+           <input type="number" min="1" step="1" max="100" class="form-control" id="vaccinated" name="vaccinated" value="11">
+        </div>
+      </div>
+
+<!-- checkbbox to enable adding custom dates -->
+     <div class="row">
+       <div class="form-group">
+           <input type="checkbox" name="checkdates" id="checkdates">  Use custom social distancing dates and durations</input><br>
+       </div>
+     </div>
+
+<!-- adding custom social distanceing dates and durations -->
+     <div class="row">
+       <div class="form-group control-group after-add-more" id="div_dates" style="display: none;">
+          <label>Social distancing dates, durations (in days), and extent (between 0-1)</label><br>
+          <button class="btn btn-success add-more" type="button"><i class="glyphicon glyphicon-plus"></i> Add</button>
+        </div>
+      </div>
+
+<!-- empty div to anchor added date input fields -->
+        <div class="before-add-more">
+        </div>
+	
+
+<!--
+        <div class="input-group control-group after-add-more">
+          <input type="text" name="addmore[]" class="form-control" placeholder="Enter Name Here">
+          <div class="input-group-btn"> 
+            <button class="btn btn-success add-more" type="button"><i class="glyphicon glyphicon-plus"></i> + Add</button>
+          </div>
+        </div>
+-->
+
+    <hr>    
+    <div class="row" style="margin-bottom:0.5cm;">
+        <h3>Subscribe for Results</h3>
+    </div>
+
+<!-- email address field --> 
+    <div class="row">
+        <div class="form-group">
+          <label>Enter Email*</label>
+          <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required="true">
+        </div>
+    </div>
+
+<!-- user name field (optional) -->
+    <div class="row">
+        <div class="form-group">
+          <label>Enter Name</label>
+          <input type="text" class="form-control" id="username" name="username" placeholder="Select a username">
+        </div>
+    </div>
+    
+<!-- buttons -->    
+    <div class="row" style="margin-top:0.5cm; margin-bottom:2cm;">
+        <button type="submit" class="btn btn-primary" id="plot_btn" style="margin-right:5px;"> Quick Plot </button>
+        <button type="submit" class="btn btn-primary" id="submit_btn"> Simulate </button>
+    </div>
+        
+      </form>
+
+        <!-- Copy Fields -->
+       <div class="row" style="display: none;">
+        <div class="copy">
+          <div class="control-group input-group cp_dates" style="margin-top:5px; margin-bottom:2px">
+            <!-- input type="text" name="addmore[]" class="form-control" placeholder="Enter Name Here" -->
+            <div class="col-sm-6">
+              <!-- span class="has-float-label" -->
+                <label for="dates">Date</label>
+                <input type="date" class="form-control datepicker" id="dates" name="dates" data-date="" data-date-format="yyyy/mm/dd" min="2020-01-01" max="{{ today }}"required="true">
+              <!-- /span -->
+            </div>
+            <div class="col-sm-3">
+               <!-- span class="has-float-label" -->
+                <label for="durations">Duration</label>
+                <input type="number" min="1" step="1" max="365" class="form-control" id="durations" name="durations" value="1" required="true">
+               <!-- /span -->
+            </div>
+            <div class="col-sm-3">
+              <!-- span class="has-float-label" -->
+                <label for="extent">Extent [0-1]</label>
+                <input type="number" min="0" step="0.001" max="1" class="form-control" id="extent" name="extent" value="0.5" required="true">
+              <!-- /span -->
+            </div>
+            <div class="input-group-btn" style="vertical-align: bottom;"> 
+              <button class="btn btn-danger remove" type="button"><i class="glyphicon glyphicon-remove"></i> Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+</div>
+
+
+<div class="col-xs-1">
+</div>
+<div class="col-xs-6">
+      <div id="spinner" style="margin-top:5cm; display: none;">
+        <img src="{{ url_for('static', filename='img/static/spinner.gif') }}" alt="Loading...">
+      </div>
+      <div id="plot-text" style="margin-top:5cm;">
+         <!-- h4>your plot will appear here</h4 -->
+      </div>
+      <div id="plot" style="margin-top:5cm; display: none;">
+      </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+
+<script>
+  function filesize(elem){
+    document.cookie = `filesize=${elem.files[0].size}`
+  }
+</script>
+
+<script>
+// for the name of the file to appear on select
+//$(".custom-file-input").on("change", function() {
+//  var fileName = $(this).val().split("\\").pop();
+//  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+//});
+</script>
+
+<script>
+// for div with dates to appear/disappear on select
+$(function () {
+    $("#checkdates").click(function () {
+        if ($(this).is(":checked")) {
+            $("#div_dates").show();
+            $(".cp_dates").show();
+        } else {
+            $("#div_dates").hide();
+            $(".cp_dates").hide();
+        }
+    });
+});
+</script>
+
+
+<script>
+// for div_reinsert to appear/disappear on select
+$(function () {
+    $("#checkreinsert").click(function () {
+        if ($(this).is(":checked")) {
+            $("#div_reinsert").show();
+        } else {
+            $("#div_reinsert").hide();
+        }
+    });
+});
+</script>
+
+
+<script>
+// for div_vax to appear/disappear on select
+$(function () {
+    $("#checkvax").click(function () {
+        if ($(this).is(":checked")) {
+            $("#div_vax").show();
+        } else {
+            $("#div_vax").hide();
+        }
+    });
+});
+</script>
+
+
+<script type="text/javascript">
+// add more input fields
+    $(document).ready(function() {
+      $(".add-more").click(function(){ 
+          var html = $(".copy").html();
+//          $(".after-add-more").after(html);
+          $(".before-add-more").before(html);
+      });
+      $("body").on("click",".remove",function(){ 
+          $(this).parents(".control-group").remove();
+      });
+    });
+</script>
+
+
+<script type="text/javascript">
+// script to not reload the page on button click
+$(document).ready(function() {
+  $("#plot_btn").click(function(e){
+
+    var form = document.getElementById("param-form");
+    if(form.checkValidity()) {
+
+      document.body.scrollTop = 0; // For Safari
+      document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+
+      $("#plot-text").hide();
+      $("#plot").hide();
+      $("#spinner").show();
+
+  //    var form = document.getElementById("param-form");
+      var formData = new FormData(form);
+      var str1 = "<img src=\"";
+      var str2 = "\">";
+      var str3 = "img\/output\/";
+      console.log(str3);
+
+      $.ajax({
+        type: "POST",
+        url: "/quickplot",
+        data: formData,
+        processData: false,
+        contentType: false,
+      })
+      .done(function(data) {
+        var plotname = data;
+        var str4 = str3.concat(plotname);
+        var str5 = Flask.url_for("static", {"filename": str4});
+        var str6 = str1.concat(str5);
+        var source = str6.concat(str2); 
+        console.log(source);
+        $("#plot").html(source);
+        $("#spinner").hide();
+        $("#plot").show();
+      });
+      e.preventDefault();
+    }
+  });
+});
+</script>
+
+{% endblock %}

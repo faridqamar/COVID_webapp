@@ -1,0 +1,37 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}Job Sumitted{% endblock %}
+
+{% block main %}
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+
+      <h1>Job Successfully Submitted</h1>
+      <hr>
+
+      <div class="card">
+        <div class="card-body">
+          {% if username %}
+          <h5 class="card-title">Thanks {{ username }}!</h5>
+          <hr>
+          <p style="color: black">Your requested job has been succesfully submitted to the queue.</p>
+          <p style="color: CornflowerBlue">{{ message }}</p>
+          <p style="color: black">When the computation is done, an email will be sent to <span style="color: blue">{{ email }}</span> with 
+          an attached file and instructions on how to view the results.</p>
+          
+          {% else %}
+          <p style="color: black">Your requested job has been succesfully submitted to the queue.</p>
+          <p style="color: CornflowerBlue">{{ message }}</p>
+          <p style="color: black">When the computation is done, an email will be sent to <span style="color: blue">{{ email }}</span> with 
+          an attached file and instructions on how to view the results.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

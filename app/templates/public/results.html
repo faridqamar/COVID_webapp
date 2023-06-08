@@ -1,0 +1,39 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}Results{% endblock %}
+
+{% block main %}
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+
+      <h3>Results</h3>
+      <hr>
+
+      <div class="card">
+        <div class="card-body">
+          
+          <h4>
+          Parameters
+          </h4>
+          <hr>
+    
+            {{ parameters.to_html() | safe }}
+
+          <hr>
+          <h4>Predictions</h4>
+          <hr>
+            <p>Download <a href="{{ url_for('static', filename='results/' + filecode + '/predictions.csv') }}">predictions.csv</a></p>
+            <div>
+            <img src="{{ url_for('static', filename='results/' + filecode + '/predictions.png') }}" alt="predictions plot">
+            </div>
+          
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
