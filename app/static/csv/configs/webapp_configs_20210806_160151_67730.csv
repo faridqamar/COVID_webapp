@@ -1,0 +1,11 @@
+DEorCC,DE
+nsteps,700
+fracwith,0.8
+daysuntils,7
+infectious_days,28
+symptoms_days_before_hospital,4
+reinsert,inf
+vaccinated,11
+DistancingDates,NA
+DistancingDurations,NA
+DistancingExtent,NA
